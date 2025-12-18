@@ -1,10 +1,13 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* ================= GLOBAL ================= */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; /* hilangkan scroll global */
+  font-family: "Inter", sans-serif;
+  background-color: #f9fafb;
 }
 
+/* ================= LOGO ================= */
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -19,12 +22,8 @@
 }
 
 @keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -33,11 +32,136 @@
   }
 }
 
-.card {
-  padding: 2em;
+/* ================= CONTAINER ================= */
+.content {
+  display: flex;
+  height: 100vh; /* full viewport */
+  width: 100vw;
+  overflow: hidden; /* scroll global hilang */
 }
 
-.read-the-docs {
-  color: #888;
+/* ================= SIDEBAR ================= */
+.sidebar {
+  width: 250px; /* sesuaikan */
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow-y: auto; /* scroll jika konten sidebar panjang */
+  background-color: #f3f4f6;
+  padding: 1rem;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+}
+
+/* ================= MAIN AREA ================= */
+.main-area {
+  margin-left: 250px; /* sesuai sidebar */
+  padding: 20px;
+  height: 100%;
+  overflow: hidden; /* scroll global hilang */
+
+  display: flex;
+  justify-content: center; /* horizontal center */
+  align-items: center;     /* vertical center */
+}
+
+.card, .homeCard {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  max-width: 950px;
+  /* HAPUS margin top/bottom supaya flex center bekerja */
+  margin-left: auto;
+  margin-right: auto;
+
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  max-height: 80vh;
+  overflow-y: auto; /* scroll di card jika konten panjang */
+}
+
+.homeCard {
+  background: #b1b2b3ff;
+  max-width: 900px;
+  text-align: center;
+  padding: 30px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ================= INPUT ================= */
+input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+/* ================= TABLE ================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+table th, table td {
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+/* ================= BUTTONS ================= */
+.btnPrimary {
+  background: #1e40af;
+  color: #fff;
+  padding: 8px 14px;
+  margin-right: 6px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btnWarn {
+  background: #f59e0b;
+  color: #fff;
+  margin-right: 6px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btnDanger {
+  background: #dc2626;
+  color: #fff;
+  margin-right: 6px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btnInfo {
+  background: #0d9488;
+  color: #fff;
+  margin-right: 6px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+  }
+  .main-area {
+    margin-left: 200px;
+  }
+}
+
+.center-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* vertical center */
+  align-items: center;     /* horizontal center */
+  height: 100%;            /* penuh tinggi main-area */
 }
 
