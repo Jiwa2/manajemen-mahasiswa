@@ -128,6 +128,23 @@ export default function Home() {
             <p>Selamat datang di aplikasi manajemen data mahasiswa berbasis web.</p>
             <div style={homeBox}>
               <ul>
+                <p><strong>Silahkan pilih menu berikut di Sidebar kiri halaman!</strong></p>
+                <li>Input Data</li>
+                <li>Lihat Data</li>
+                <li>Cari Data</li>
+                <li>Pengurutan Data</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+                {page === "logout" && (
+          <div style={homeCard}>
+            <h1>Sistem Manajemen Data Mahasiswa</h1>
+            <p>Selamat datang di aplikasi manajemen data mahasiswa berbasis web.</p>
+            <div style={homeBox}>
+              <ul>
+                <p><strong>Silahkan pilih menu berikut di Sidebar kiri halaman!</strong></p>
                 <li>Input Data</li>
                 <li>Lihat Data</li>
                 <li>Cari Data</li>
