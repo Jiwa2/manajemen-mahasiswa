@@ -91,16 +91,21 @@ export default function Home() {
     }
   };
 
-  const handleDelete = async (nim) => {
-    if (!window.confirm("Hapus data ini?")) return;
-    try {
-      await fetch(`http://localhost:5000/api/mahasiswa/${nim}`, { method: "DELETE" });
-      loadData();
-    } catch (err) {
-      console.error(err);
-      alert("Gagal menghapus data");
-    }
-  };
+const API_URL = "https://manajemen-mahasiswa-production.up.railway.app";
+
+const handleDelete = async (nim) => {
+  if (!window.confirm("Hapus data ini?")) return;
+  try {
+    await fetch(`${API_URL}/api/mahasiswa/${nim}`, {
+      method: "DELETE",
+    });
+    loadData();
+  } catch (err) {
+    console.error(err);
+    alert("Gagal menghapus data");
+  }
+};
+
 
   const handleSearch = async () => {
     try {
