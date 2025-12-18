@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
+/* ================= API CONFIG ================= */
+const API_URL = "https://manajemen-mahasiswa-production.up.railway.app";
+
 export default function Home() {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState("Home");
@@ -25,9 +28,10 @@ export default function Home() {
     setOpen(false);
   };
 
+  /* ================= LOAD DATA ================= */
   const loadData = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/mahasiswa");
+      const res = await fetch(`${API_URL}/api/mahasiswa`);
       if (!res.ok) throw new Error("Gagal load data");
       const json = await res.json();
       setData(json);
@@ -42,19 +46,33 @@ export default function Home() {
     loadData();
   }, []);
 
+  /* ================= ADD DATA ================= */
   const handleAdd = async () => {
-    if (!nim || !nama || !prodi) return alert("Semua field wajib diisi!");
+    if (!nim || !nama || !prodi) {
+      alert("Semua field wajib diisi!");
+      return;
+    }
+
     try {
-      const res = await fetch("http://localhost:5000/api/mahasiswa", {
+      const res = await fetch(`${API_URL}/api/mahasiswa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nim: nim.toString(), nama, prodi }),
+        body: JSON.stringify({
+          nim: nim.toString(),
+          nama,
+          prodi,
+        }),
       });
+
       if (!res.ok) {
         const err = await res.json();
-        return alert(err.message || "Gagal menambahkan data");
+        alert(err.message || "Gagal menambahkan data");
+        return;
       }
-      setNim(""); setNama(""); setProdi("");
+
+      setNim("");
+      setNama("");
+      setProdi("");
       loadData();
     } catch (err) {
       console.error(err);
@@ -62,6 +80,7 @@ export default function Home() {
     }
   };
 
+  /* ================= EDIT ================= */
   const startEdit = (mhs) => {
     setEditMode(true);
     setEditNIM(mhs.nim);
@@ -73,17 +92,26 @@ export default function Home() {
 
   const handleEditSave = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/mahasiswa/${editNIM}`, {
+      const res = await fetch(`${API_URL}/api/mahasiswa/${editNIM}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nim: nim.toString(), nama, prodi }),
+        body: JSON.stringify({
+          nim: nim.toString(),
+          nama,
+          prodi,
+        }),
       });
+
       if (!res.ok) {
         const err = await res.json();
-        return alert(err.message || "Gagal update data");
+        alert(err.message || "Gagal update data");
+        return;
       }
+
       setEditMode(false);
-      setNim(""); setNama(""); setProdi("");
+      setNim("");
+      setNama("");
+      setProdi("");
       loadData();
     } catch (err) {
       console.error(err);
@@ -91,25 +119,27 @@ export default function Home() {
     }
   };
 
-const API_URL = "https://manajemen-mahasiswa-production.up.railway.app";
+  /* ================= DELETE ================= */
+  const handleDelete = async (nim) => {
+    if (!window.confirm("Hapus data ini?")) return;
 
-const handleDelete = async (nim) => {
-  if (!window.confirm("Hapus data ini?")) return;
-  try {
-    await fetch(`${API_URL}/api/mahasiswa/${nim}`, {
-      method: "DELETE",
-    });
-    loadData();
-  } catch (err) {
-    console.error(err);
-    alert("Gagal menghapus data");
-  }
-};
+    try {
+      await fetch(`${API_URL}/api/mahasiswa/${nim}`, {
+        method: "DELETE",
+      });
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menghapus data");
+    }
+  };
 
-
+  /* ================= SEARCH ================= */
   const handleSearch = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/mahasiswa/search/${searchNIM}`);
+      const res = await fetch(
+        `${API_URL}/api/mahasiswa/search/${searchNIM}`
+      );
       if (!res.ok) throw new Error("Gagal mencari data");
       const json = await res.json();
       setSearchResult(json);
@@ -118,6 +148,7 @@ const handleDelete = async (nim) => {
       alert("Gagal mencari data mahasiswa");
     }
   };
+
 
   // =================== SORT ===================
   const sortNamaAsc = () => setSortedData([...data].sort((a, b) => a.nama.localeCompare(b.nama)));
