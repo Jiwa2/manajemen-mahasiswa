@@ -132,5 +132,6 @@ app.get("/api/mahasiswa/search/:nim", (req, res) => {
 /* ================= PORT (INI KUNCI RAILWAY) ================= */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log("Server running on port " + PORT);
 });
+
