@@ -3,7 +3,9 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
 /* ================= API CONFIG ================= */
-const API_URL = "https://manajemen-mahasiswa-production.up.railway.app";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://manajemen-mahasiswa-production.up.railway.app";
 
 export default function Home() {
   const [open, setOpen] = useState(false);
@@ -28,17 +30,16 @@ export default function Home() {
     setOpen(false);
   };
 
-  /* ================= LOAD DATA ================= */
+  /* ================= LOAD ================= */
   const loadData = async () => {
     try {
       const res = await fetch(`${API_URL}/api/mahasiswa`);
-      if (!res.ok) throw new Error("Gagal load data");
+      if (!res.ok) throw new Error();
       const json = await res.json();
       setData(json);
       setSortedData(json);
-    } catch (err) {
-      console.error(err);
-      alert("Gagal load data mahasiswa");
+    } catch {
+      alert("Gagal load data");
     }
   };
 
@@ -46,47 +47,38 @@ export default function Home() {
     loadData();
   }, []);
 
-  /* ================= ADD DATA ================= */
+  /* ================= ADD ================= */
   const handleAdd = async () => {
-    if (!nim || !nama || !prodi) {
-      alert("Semua field wajib diisi!");
-      return;
-    }
+    if (!nim || !nama || !prodi) return alert("Semua field wajib diisi");
 
     try {
       const res = await fetch(`${API_URL}/api/mahasiswa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nim: nim.toString(),
-          nama,
-          prodi,
-        }),
+        body: JSON.stringify({ nim: nim.toString(), nama, prodi }),
       });
 
       if (!res.ok) {
         const err = await res.json();
-        alert(err.message || "Gagal menambahkan data");
-        return;
+        return alert(err.message);
       }
 
       setNim("");
       setNama("");
       setProdi("");
       loadData();
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Gagal menambahkan data");
     }
   };
 
   /* ================= EDIT ================= */
-  const startEdit = (mhs) => {
+  const startEdit = (m) => {
     setEditMode(true);
-    setEditNIM(mhs.nim);
-    setNim(mhs.nim);
-    setNama(mhs.nama);
-    setProdi(mhs.prodi);
+    setEditNIM(m.nim);
+    setNim(m.nim);
+    setNama(m.nama);
+    setProdi(m.prodi);
     setPage("input");
   };
 
@@ -95,17 +87,12 @@ export default function Home() {
       const res = await fetch(`${API_URL}/api/mahasiswa/${editNIM}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nim: nim.toString(),
-          nama,
-          prodi,
-        }),
+        body: JSON.stringify({ nama, prodi }),
       });
 
       if (!res.ok) {
         const err = await res.json();
-        alert(err.message || "Gagal update data");
-        return;
+        return alert(err.message);
       }
 
       setEditMode(false);
@@ -113,8 +100,7 @@ export default function Home() {
       setNama("");
       setProdi("");
       loadData();
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Gagal update data");
     }
   };
@@ -124,12 +110,17 @@ export default function Home() {
     if (!window.confirm("Hapus data ini?")) return;
 
     try {
-      await fetch(`${API_URL}/api/mahasiswa/${nim}`, {
+      const res = await fetch(`${API_URL}/api/mahasiswa/${nim}`, {
         method: "DELETE",
       });
+
+      if (!res.ok) {
+        const err = await res.json();
+        return alert(err.message);
+      }
+
       loadData();
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Gagal menghapus data");
     }
   };
@@ -140,39 +131,40 @@ export default function Home() {
       const res = await fetch(
         `${API_URL}/api/mahasiswa/search/${searchNIM}`
       );
-      if (!res.ok) throw new Error("Gagal mencari data");
+      if (!res.ok) throw new Error();
       const json = await res.json();
       setSearchResult(json);
-    } catch (err) {
-      console.error(err);
-      alert("Gagal mencari data mahasiswa");
+    } catch {
+      alert("Gagal mencari data");
     }
   };
 
+  /* ================= SORT ================= */
+  const sortNamaAsc = () =>
+    setSortedData([...data].sort((a, b) => a.nama.localeCompare(b.nama)));
+  const sortNamaDesc = () =>
+    setSortedData([...data].sort((a, b) => b.nama.localeCompare(a.nama)));
+  const sortNimAsc = () =>
+    setSortedData([...data].sort((a, b) => Number(a.nim) - Number(b.nim)));
+  const sortNimDesc = () =>
+    setSortedData([...data].sort((a, b) => Number(b.nim) - Number(a.nim)));
 
-  // =================== SORT ===================
-  const sortNamaAsc = () => setSortedData([...data].sort((a, b) => a.nama.localeCompare(b.nama)));
-  const sortNamaDesc = () => setSortedData([...data].sort((a, b) => b.nama.localeCompare(a.nama)));
-  const sortNimAsc = () => setSortedData([...data].sort((a, b) => Number(a.nim) - Number(b.nim)));
-  const sortNimDesc = () => setSortedData([...data].sort((a, b) => Number(b.nim) - Number(a.nim)));
-
-  // =================== EXPORT CSV ===================
-  const exportCSV = (dataToExport) => {
-    if (!dataToExport || dataToExport.length === 0) {
-      alert("Data kosong!");
-      return;
-    }
+  /* ================= EXPORT CSV ================= */
+  const exportCSV = (list) => {
+    if (!list.length) return alert("Data kosong");
     const header = ["NIM", "Nama", "Prodi"];
-    const rows = dataToExport.map(m => `"${m.nim}","${m.nama}","${m.prodi}"`);
-    const csvContent = [header.join(","), ...rows].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const rows = list.map(
+      (m) => `"${m.nim}","${m.nama}","${m.prodi}"`
+    );
+    const blob = new Blob(
+      [[header.join(","), ...rows].join("\n")],
+      { type: "text/csv;charset=utf-8;" }
+    );
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "data_mahasiswa.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "data_mahasiswa.csv";
+    a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -184,102 +176,51 @@ export default function Home() {
       <main className={`content ${open ? "shifted" : ""}`}>
         {page === "Home" && (
           <div style={homeCard}>
-            <h1 style={{ color: "#1e3a8a", marginBottom: 8 }}>
-              Sistem Manajemen Data Mahasiswa
-            </h1>
-            <p style={{ color: "#555", marginBottom: 16, fontSize: 20 }}>
-              Selamat datang di aplikasi manajemen data mahasiswa berbasis web.
-            </p>
-            <div style={homeBox}>
-              <p style={{ marginBottom: 8 }}>
-                📌 <strong>Petunjuk penggunaan:</strong>
-              </p>
-              <ul style={{ paddingLeft: 20, lineHeight: 1.8 }}>
-                <li>Gunakan menu <strong>Input Data</strong> untuk menambahkan mahasiswa.</li>
-                <li>Gunakan menu <strong>Lihat Data</strong> untuk melihat, edit, dan hapus data.</li>
-                <li>Gunakan menu <strong>Cari Data</strong> untuk pencarian berdasarkan NIM.</li>
-                <li>Gunakan menu <strong>Pengurutan Data</strong> untuk mengurutkan data mahasiswa.</li>
-              </ul>
-            </div>
-            <p style={{ fontSize: 20, color: "#777", marginTop: 16 }}>
-              Silakan buka <strong>Sidebar</strong> untuk memilih menu yang tersedia.
-            </p>
+            <h1>Sistem Manajemen Data Mahasiswa</h1>
+            <p>Gunakan sidebar untuk navigasi</p>
           </div>
         )}
 
-        {/* INPUT */}
         {page === "input" && (
           <div style={card}>
-            <h2>{editMode ? "Edit Data Mahasiswa" : "Input Data Mahasiswa"}</h2>
-            <label>NIM</label>
-            <input style={input} value={nim} onChange={e => setNim(e.target.value)} />
-            <label>Nama</label>
-            <input style={input} value={nama} onChange={e => setNama(e.target.value)} />
-            <label>Program Studi</label>
-            <input style={input} value={prodi} onChange={e => setProdi(e.target.value)} />
+            <h2>{editMode ? "Edit Data" : "Input Data"}</h2>
+            <input style={input} placeholder="NIM" value={nim} onChange={(e) => setNim(e.target.value)} />
+            <input style={input} placeholder="Nama" value={nama} onChange={(e) => setNama(e.target.value)} />
+            <input style={input} placeholder="Prodi" value={prodi} onChange={(e) => setProdi(e.target.value)} />
             <button style={btnPrimary} onClick={editMode ? handleEditSave : handleAdd}>
-              {editMode ? "Simpan Perubahan" : "Simpan Data"}
+              Simpan
             </button>
           </div>
         )}
 
-        {/* VIEW */}
         {page === "view" && (
           <div style={card}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div>
-                <h2 style={{ margin: 0 }}>Data Mahasiswa</h2>
-                <p style={{ fontSize: 12, color: "#555", marginTop: 4 }}>Data dapat diunduh dalam format CSV</p>
-              </div>
-              <button type="button" style={btnInfo} onClick={() => exportCSV(data)}>
-                Export CSV
-              </button>
-            </div>
-            <div style={{ overflowX: "auto", background: "#f3f4f6", padding: 12, borderRadius: 8 }}>
-              <table style={table}>
-                <thead>
-                  <tr>
-                    <th>NIM</th>
-                    <th>Nama</th>
-                    <th>Prodi</th>
-                    <th style={{ textAlign: "center" }}>Aksi</th>
+            <button style={btnInfo} onClick={() => exportCSV(data)}>Export CSV</button>
+            <table style={table}>
+              <tbody>
+                {data.map((m) => (
+                  <tr key={m.nim}>
+                    <td>{m.nim}</td>
+                    <td>{m.nama}</td>
+                    <td>{m.prodi}</td>
+                    <td>
+                      <button style={btnWarn} onClick={() => startEdit(m)}>Edit</button>
+                      <button style={btnDanger} onClick={() => handleDelete(m.nim)}>Hapus</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {data.length === 0 ? (
-                    <tr>
-                      <td colSpan="4" style={{ textAlign: "center", padding: 16 }}>Data masih kosong</td>
-                    </tr>
-                  ) : (
-                    data.map(m => (
-                      <tr key={m.nim}>
-                        <td>{m.nim}</td>
-                        <td>{m.nama}</td>
-                        <td>{m.prodi}</td>
-                        <td style={{ textAlign: "center" }}>
-                          <button style={btnWarn} onClick={() => startEdit(m)}>Edit</button>
-                          <button style={btnDanger} onClick={() => handleDelete(m.nim)}>Hapus</button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {/* SEARCH */}
         {page === "search" && (
           <div style={card}>
-            <h2>Pencarian Mahasiswa (NIM)</h2>
-            <div style={{ display: "flex", gap: 8 }}>
-              <input style={input} value={searchNIM} onChange={e => setSearchNIM(e.target.value)} />
-              <button style={btnPrimary} onClick={handleSearch}>Cari</button>
-            </div>
+            <input style={input} value={searchNIM} onChange={(e) => setSearchNIM(e.target.value)} />
+            <button style={btnPrimary} onClick={handleSearch}>Cari</button>
             <table style={table}>
               <tbody>
-                {searchResult.map(m => (
+                {searchResult.map((m) => (
                   <tr key={m.nim}>
                     <td>{m.nim}</td>
                     <td>{m.nama}</td>
@@ -291,37 +232,13 @@ export default function Home() {
           </div>
         )}
 
-        {/* SORT */}
         {page === "sort" && (
           <div style={card}>
-            <h2>Pengurutan Data</h2>
-            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-              <button style={btnPrimary} onClick={sortNamaAsc}>Nama A–Z</button>
-              <button style={btnInfo} onClick={sortNamaDesc}>Nama Z–A</button>
-              <button style={btnPrimary} onClick={sortNimAsc}>NIM ↑</button>
-              <button style={btnInfo} onClick={sortNimDesc}>NIM ↓</button>
-              <button style={btnInfo} onClick={() => exportCSV(sortedData)}>Export CSV</button>
-            </div>
-            <div style={{ overflowX: "auto" }}>
-              <table style={table}>
-                <thead>
-                  <tr>
-                    <th>NIM</th>
-                    <th>Nama</th>
-                    <th>Prodi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedData.map(m => (
-                    <tr key={m.nim}>
-                      <td>{m.nim}</td>
-                      <td>{m.nama}</td>
-                      <td>{m.prodi}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <button onClick={sortNamaAsc}>Nama A–Z</button>
+            <button onClick={sortNamaDesc}>Nama Z–A</button>
+            <button onClick={sortNimAsc}>NIM ↑</button>
+            <button onClick={sortNimDesc}>NIM ↓</button>
+            <button onClick={() => exportCSV(sortedData)}>Export CSV</button>
           </div>
         )}
       </main>
@@ -330,12 +247,11 @@ export default function Home() {
 }
 
 /* ===== STYLE ===== */
-const card = { background: "#fff", padding: 20, borderRadius: 10, boxShadow: "0 4px 10px rgba(0,0,0,.1)", maxWidth: 900, margin: "20px auto" };
-const input = { width: "100%", padding: 10, marginBottom: 10, borderRadius: 6, border: "1px solid #000000ff" };
-const table = { width: "100%", borderCollapse: "collapse", marginTop: 10 };
-const btnPrimary = { background: "#1e40af", color: "#fff", border: "none", padding: "8px 14px", borderRadius: 6, cursor: "pointer" };
-const btnWarn = { background: "#f59e0b", color: "#fff", border: "none", padding: "6px 10px", borderRadius: 6, marginRight: 6 };
-const btnDanger = { background: "#dc2626", color: "#fff", border: "none", padding: "6px 10px", borderRadius: 6 };
-const btnInfo = { background: "#0d9488", color: "#fff", border: "none", padding: "8px 14px", borderRadius: 6 };
-const homeCard = { background: "#b1b2b3ff", padding: 30, borderRadius: 12, maxWidth: 900, margin: "40px auto", textAlign: "center" };
-const homeBox = { background: "#ffffff", padding: 16, borderRadius: 8, textAlign: "left", boxShadow: "0 2px 6px rgba(0,0,0,.05)" };
+const card = { background: "#fff", padding: 20, borderRadius: 10, maxWidth: 900, margin: "20px auto" };
+const input = { width: "100%", padding: 10, marginBottom: 10 };
+const table = { width: "100%", marginTop: 10 };
+const btnPrimary = { background: "#1e40af", color: "#fff", padding: 8 };
+const btnWarn = { background: "#f59e0b", color: "#fff", marginRight: 5 };
+const btnDanger = { background: "#dc2626", color: "#fff" };
+const btnInfo = { background: "#0d9488", color: "#fff", marginBottom: 10 };
+const homeCard = { padding: 30, textAlign: "center" };
