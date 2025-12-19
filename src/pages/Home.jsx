@@ -8,7 +8,7 @@ const API_URL = "https://manajemen-mahasiswa-production.up.railway.app";
 export default function Home() {
   const navigate = useNavigate();
 
-  /* ====== AUTH PROTECTION ====== */
+  // ===== AUTH PROTECTION =====
   useEffect(() => {
     if (!localStorage.getItem("login")) {
       navigate("/");
@@ -20,7 +20,7 @@ export default function Home() {
     navigate("/");
   };
 
-  /* ====== STATE ====== */
+  // ===== STATE =====
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState("Home");
 
@@ -44,10 +44,10 @@ export default function Home() {
     setPage(key);
     setOpen(false);
     setSearchNIM("");
-    setSortedData([]);
+    setSortedData([...data]);
   };
 
-  /* ====== LOAD DATA ====== */
+  // ===== LOAD DATA =====
   const loadData = async () => {
     try {
       const res = await fetch(`${API_URL}/api/mahasiswa`);
@@ -63,20 +63,16 @@ export default function Home() {
     loadData();
   }, []);
 
-  /* ====== ADD / EDIT ====== */
+  // ===== ADD / EDIT =====
   const handleAdd = async () => {
     if (!nim || !nama || !prodi) return alert("Semua field wajib diisi!");
     try {
       const now = new Date().toISOString();
-      const res = await fetch(`${API_URL}/api/mahasiswa`, {
+      await fetch(`${API_URL}/api/mahasiswa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nim, nama, prodi, createdAt: now }),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        return alert(err.message);
-      }
       setNim(""); setNama(""); setProdi(""); loadData();
     } catch {
       alert("Gagal menambahkan data");
@@ -92,15 +88,11 @@ export default function Home() {
 
   const handleEditSave = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/mahasiswa/${editNIM}`, {
+      await fetch(`${API_URL}/api/mahasiswa/${editNIM}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nim, nama, prodi }),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        return alert(err.message);
-      }
       setEditMode(false); setNim(""); setNama(""); setProdi(""); loadData();
     } catch {
       alert("Gagal update data");
@@ -113,19 +105,35 @@ export default function Home() {
     loadData();
   };
 
-  /* ====== SEARCH ====== */
+  // ===== SEARCH =====
   const handleSearch = () => {
     const filtered = data.filter((m) => m.nim.includes(searchNIM));
     setSortedData(filtered);
   };
 
-  /* ====== SORT ====== */
+  // ===== SORTING =====
   const sortNamaAsc = () => setSortedData([...data].sort((a, b) => a.nama.localeCompare(b.nama)));
   const sortNamaDesc = () => setSortedData([...data].sort((a, b) => b.nama.localeCompare(a.nama)));
   const sortNimAsc = () => setSortedData([...data].sort((a, b) => a.nim - b.nim));
   const sortNimDesc = () => setSortedData([...data].sort((a, b) => b.nim - a.nim));
   const sortDateAsc = () => setSortedData([...data].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
   const sortDateDesc = () => setSortedData([...data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+
+  // ===== EXPORT CSV =====
+  const exportCSV = () => {
+    const headers = ["NIM", "Nama", "Prodi", "Tanggal Input"];
+    const rows = sortedData.map(item => [item.nim, item.nama, item.prodi, new Date(item.createdAt).toLocaleString()]);
+    let csvContent = headers.join(",") + "\n";
+    rows.forEach(row => { csvContent += row.join(",") + "\n"; });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "mahasiswa.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <>
@@ -168,8 +176,7 @@ export default function Home() {
           <div style={card}>
             <h2>Data Mahasiswa</h2>
             <div style={{ marginBottom: 10 }}>
-              <button style={btnInfo} onClick={() => sortDateAsc()}>Sort Tanggal ↑</button>
-              <button style={btnInfo} onClick={() => sortDateDesc()}>Sort Tanggal ↓</button>
+              <button style={btnInfo} onClick={exportCSV}>Export CSV</button>
             </div>
             <table style={table}>
               <thead>
@@ -198,6 +205,78 @@ export default function Home() {
             </table>
           </div>
         )}
+
+        {/* SEARCH */}
+        {page === "search" && (
+          <div style={card}>
+            <h2>Pencarian Mahasiswa (NIM)</h2>
+            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+              <input
+                style={input}
+                placeholder="Masukkan NIM"
+                value={searchNIM}
+                onChange={e => setSearchNIM(e.target.value)}
+              />
+              <button style={btnPrimary} onClick={handleSearch}>Cari</button>
+            </div>
+            <table style={table}>
+              <thead>
+                <tr>
+                  <th>NIM</th>
+                  <th>Nama</th>
+                  <th>Prodi</th>
+                  <th>Tanggal Input</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedData.map(m => (
+                  <tr key={m.nim}>
+                    <td>{m.nim}</td>
+                    <td>{m.nama}</td>
+                    <td>{m.prodi}</td>
+                    <td>{new Date(m.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* SORTING */}
+        {page === "sort" && (
+          <div style={card}>
+            <h2>Pengurutan Data</h2>
+            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+              <button style={btnPrimary} onClick={sortNamaAsc}>Nama ↑</button>
+              <button style={btnInfo} onClick={sortNamaDesc}>Nama ↓</button>
+              <button style={btnPrimary} onClick={sortNimAsc}>NIM ↑</button>
+              <button style={btnInfo} onClick={sortNimDesc}>NIM ↓</button>
+              <button style={btnPrimary} onClick={sortDateAsc}>Tanggal ↑</button>
+              <button style={btnInfo} onClick={sortDateDesc}>Tanggal ↓</button>
+              <button style={btnPrimary} onClick={exportCSV}>Export CSV</button>
+            </div>
+            <table style={table}>
+              <thead>
+                <tr>
+                  <th>NIM</th>
+                  <th>Nama</th>
+                  <th>Prodi</th>
+                  <th>Tanggal Input</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedData.map(m => (
+                  <tr key={m.nim}>
+                    <td>{m.nim}</td>
+                    <td>{m.nama}</td>
+                    <td>{m.prodi}</td>
+                    <td>{new Date(m.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </main>
     </>
   );
@@ -207,9 +286,9 @@ export default function Home() {
 const card = { background: "#fff", padding: 24, borderRadius: 12, maxWidth: 950, margin: "20px auto", boxShadow: "0 4px 15px rgba(0,0,0,0.1)" };
 const input = { width: "100%", padding: 10, marginBottom: 10 };
 const table = { width: "100%", borderCollapse: "collapse", marginTop: 10 };
-const btnPrimary = { background: "#1e40af", color: "#fff", padding: "8px 14px", marginRight: 6 };
-const btnWarn = { background: "#f59e0b", color: "#fff", marginRight: 6 };
-const btnDanger = { background: "#dc2626", color: "#fff", marginRight: 6 };
-const btnInfo = { background: "#0d9488", color: "#fff", marginRight: 6 };
+const btnPrimary = { background: "#1e40af", color: "#fff", padding: "8px 14px", marginRight: 6, cursor: "pointer" };
+const btnWarn = { background: "#f59e0b", color: "#fff", marginRight: 6, cursor: "pointer" };
+const btnDanger = { background: "#dc2626", color: "#fff", marginRight: 6, cursor: "pointer" };
+const btnInfo = { background: "#0d9488", color: "#fff", marginRight: 6, cursor: "pointer" };
 const homeCard = { background: "#b1b2b3ff", padding: 30, borderRadius: 12, maxWidth: 900, margin: "40px auto", textAlign: "center" };
 const homeBox = { background: "#fff", padding: 16, borderRadius: 8 };
