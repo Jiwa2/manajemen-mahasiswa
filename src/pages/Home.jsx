@@ -67,10 +67,11 @@ export default function Home() {
   const handleAdd = async () => {
     if (!nim || !nama || !prodi) return alert("Semua field wajib diisi!");
     try {
+      const now = new Date().toISOString();
       const res = await fetch(`${API_URL}/api/mahasiswa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nim, nama, prodi }),
+        body: JSON.stringify({ nim, nama, prodi, createdAt: now }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -112,17 +113,6 @@ export default function Home() {
     loadData();
   };
 
-  const exportCSV = (list) => {
-    if (!list.length) return alert("Data kosong!");
-    const rows = list.map((m) => `"${m.nim}","${m.nama}","${m.prodi}"`);
-    const csv = ["NIM,Nama,Prodi", ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "data_mahasiswa.csv";
-    link.click();
-  };
-
   /* ====== SEARCH ====== */
   const handleSearch = () => {
     const filtered = data.filter((m) => m.nim.includes(searchNIM));
@@ -134,6 +124,8 @@ export default function Home() {
   const sortNamaDesc = () => setSortedData([...data].sort((a, b) => b.nama.localeCompare(a.nama)));
   const sortNimAsc = () => setSortedData([...data].sort((a, b) => a.nim - b.nim));
   const sortNimDesc = () => setSortedData([...data].sort((a, b) => b.nim - a.nim));
+  const sortDateAsc = () => setSortedData([...data].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
+  const sortDateDesc = () => setSortedData([...data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
 
   return (
     <>
@@ -175,10 +167,19 @@ export default function Home() {
         {page === "view" && (
           <div style={card}>
             <h2>Data Mahasiswa</h2>
-            <button style={btnInfo} onClick={() => exportCSV(data)}>Export CSV</button>
+            <div style={{ marginBottom: 10 }}>
+              <button style={btnInfo} onClick={() => sortDateAsc()}>Sort Tanggal ↑</button>
+              <button style={btnInfo} onClick={() => sortDateDesc()}>Sort Tanggal ↓</button>
+            </div>
             <table style={table}>
               <thead>
-                <tr><th>NIM</th><th>Nama</th><th>Prodi</th><th>Aksi</th></tr>
+                <tr>
+                  <th>NIM</th>
+                  <th>Nama</th>
+                  <th>Prodi</th>
+                  <th>Tanggal Input</th>
+                  <th>Aksi</th>
+                </tr>
               </thead>
               <tbody>
                 {data.map((m) => (
@@ -186,6 +187,7 @@ export default function Home() {
                     <td>{m.nim}</td>
                     <td>{m.nama}</td>
                     <td>{m.prodi}</td>
+                    <td>{new Date(m.createdAt).toLocaleString()}</td>
                     <td>
                       <button style={btnWarn} onClick={() => startEdit(m)}>Edit</button>
                       <button style={btnDanger} onClick={() => handleDelete(m.nim)}>Hapus</button>
