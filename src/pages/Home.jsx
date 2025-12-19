@@ -1,10 +1,26 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
 const API_URL = "https://manajemen-mahasiswa-production.up.railway.app";
 
 export default function Home() {
+  const navigate = useNavigate();
+
+  /* ====== AUTH PROTECTION ====== */
+  useEffect(() => {
+    if (!localStorage.getItem("login")) {
+      navigate("/");
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("login");
+    navigate("/");
+  };
+
+  /* ====== STATE ====== */
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState("Home");
 
@@ -21,13 +37,17 @@ export default function Home() {
   const toggle = () => setOpen(!open);
 
   const handleSelect = (key) => {
+    if (key === "logout") {
+      handleLogout();
+      return;
+    }
     setPage(key);
     setOpen(false);
     setSearchNIM("");
     setSortedData([]);
   };
 
-  /* ================= LOAD DATA ================= */
+  /* ====== LOAD DATA ====== */
   const loadData = async () => {
     try {
       const res = await fetch(`${API_URL}/api/mahasiswa`);
@@ -43,7 +63,7 @@ export default function Home() {
     loadData();
   }, []);
 
-  /* ================= ADD / EDIT ================= */
+  /* ====== ADD / EDIT ====== */
   const handleAdd = async () => {
     if (!nim || !nama || !prodi) return alert("Semua field wajib diisi!");
     try {
@@ -103,13 +123,13 @@ export default function Home() {
     link.click();
   };
 
-  /* ================= SEARCH ================= */
+  /* ====== SEARCH ====== */
   const handleSearch = () => {
     const filtered = data.filter((m) => m.nim.includes(searchNIM));
     setSortedData(filtered);
   };
 
-  /* ================= SORT ================= */
+  /* ====== SORT ====== */
   const sortNamaAsc = () => setSortedData([...data].sort((a, b) => a.nama.localeCompare(b.nama)));
   const sortNamaDesc = () => setSortedData([...data].sort((a, b) => b.nama.localeCompare(a.nama)));
   const sortNimAsc = () => setSortedData([...data].sort((a, b) => a.nim - b.nim));
@@ -127,8 +147,8 @@ export default function Home() {
             <h1>Sistem Manajemen Data Mahasiswa</h1>
             <p>Selamat datang di aplikasi manajemen data mahasiswa berbasis web.</p>
             <div style={homeBox}>
+              <p><strong>Silahkan pilih menu di Sidebar kiri</strong></p>
               <ul>
-                <p><strong>Silahkan pilih menu berikut di Sidebar kiri halaman!</strong></p>
                 <li>Input Data</li>
                 <li>Lihat Data</li>
                 <li>Cari Data</li>
@@ -138,23 +158,7 @@ export default function Home() {
           </div>
         )}
 
-                {page === "logout" && (
-          <div style={homeCard}>
-            <h1>Sistem Manajemen Data Mahasiswa</h1>
-            <p>Selamat datang di aplikasi manajemen data mahasiswa berbasis web.</p>
-            <div style={homeBox}>
-              <ul>
-                <p><strong>Silahkan pilih menu berikut di Sidebar kiri halaman!</strong></p>
-                <li>Input Data</li>
-                <li>Lihat Data</li>
-                <li>Cari Data</li>
-                <li>Pengurutan Data</li>
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* INPUT DATA */}
+        {/* INPUT */}
         {page === "input" && (
           <div style={card}>
             <h2>{editMode ? "Edit Data Mahasiswa" : "Input Data Mahasiswa"}</h2>
@@ -167,7 +171,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* LIHAT DATA */}
+        {/* VIEW */}
         {page === "view" && (
           <div style={card}>
             <h2>Data Mahasiswa</h2>
@@ -192,70 +196,6 @@ export default function Home() {
             </table>
           </div>
         )}
-
-        {/* CARI DATA */}
-        {page === "search" && (
-          <div style={card}>
-            <h2>Cari Mahasiswa Berdasarkan NIM</h2>
-            <input style={input} value={searchNIM} onChange={(e) => setSearchNIM(e.target.value)} placeholder="Masukkan NIM" />
-            <button style={btnInfo} onClick={handleSearch}>Cari</button>
-            <button style={btnInfo} onClick={() => setSortedData([])}>Reset</button>
-
-            {sortedData.length > 0 && (
-              <table style={table}>
-                <thead>
-                  <tr><th>NIM</th><th>Nama</th><th>Prodi</th><th>Aksi</th></tr>
-                </thead>
-                <tbody>
-                  {sortedData.map((m) => (
-                    <tr key={m.nim}>
-                      <td>{m.nim}</td>
-                      <td>{m.nama}</td>
-                      <td>{m.prodi}</td>
-                      <td>
-                        <button style={btnWarn} onClick={() => startEdit(m)}>Edit</button>
-                        <button style={btnDanger} onClick={() => handleDelete(m.nim)}>Hapus</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-
-        {/* PENGURUTAN DATA */}
-        {page === "sort" && (
-          <div style={card}>
-            <h2>Pengurutan Data Mahasiswa</h2>
-            <div style={{ marginBottom: 12 }}>
-              <button style={btnInfo} onClick={sortNimAsc}>NIM ↑</button>
-              <button style={btnInfo} onClick={sortNimDesc}>NIM ↓</button>
-              <button style={btnInfo} onClick={sortNamaAsc}>Nama A→Z</button>
-              <button style={btnInfo} onClick={sortNamaDesc}>Nama Z→A</button>
-              <button style={btnInfo} onClick={() => exportCSV(sortedData)}>Export CSV</button>
-            </div>
-            <table style={table}>
-              <thead>
-                <tr><th>NIM</th><th>Nama</th><th>Prodi</th><th>Aksi</th></tr>
-              </thead>
-              <tbody>
-                {sortedData.map((m) => (
-                  <tr key={m.nim}>
-                    <td>{m.nim}</td>
-                    <td>{m.nama}</td>
-                    <td>{m.prodi}</td>
-                    <td>
-                      <button style={btnWarn} onClick={() => startEdit(m)}>Edit</button>
-                      <button style={btnDanger} onClick={() => handleDelete(m.nim)}>Hapus</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
       </main>
     </>
   );
