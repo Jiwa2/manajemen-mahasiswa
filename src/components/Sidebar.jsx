@@ -25,14 +25,6 @@ export default function Sidebar({ open, onSelect }) {
         <li onClick={() => onSelect("search")}>Cari Data</li>
         <li onClick={() => onSelect("sort")}>Pengurutan Data</li>
       </ul>
-      <div style={{ marginTop: "auto" }}>
-        <button
-          className="logout-btn"
-          onClick={() => onSelect("logout")}
-        >
-          Logout
-        </button>
-      </div>
     </aside>
   );
 }
